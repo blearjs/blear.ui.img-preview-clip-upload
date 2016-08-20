@@ -1,5 +1,37 @@
 .blearui-imgPreviewClipUpload {
-  &-img {
-    max-width: 100%;
+  position: relative;
+
+  &-container {
+    text-align: center;
+  }
+
+  &-footer {
+    padding: 10px;
+    text-align: center;
+
+    &-inner {
+      display: inline-block;
+      overflow: hidden;
+    }
+  }
+
+  &-button {
+    float: left;
+    font-size: 16px;
+    padding: 8px 16px;
+    margin: 0 10px;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    outline: 0;
+    cursor: pointer;
+
+    &-sure {
+      display: none;
+    }
+
+    &:hover {
+      background: #eee;
+    }
   }
 }

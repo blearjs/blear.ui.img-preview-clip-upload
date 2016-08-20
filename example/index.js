@@ -10,7 +10,7 @@
 var ImgPreviewClipUpload = require('../src/index');
 
 var uploadEl = document.getElementById('upload');
-var ipcu = new ImgPreviewClipUpload();
+var ipcu = window.ipcu = new ImgPreviewClipUpload();
 
 uploadEl.onclick = function () {
     ipcu.open();
