@@ -81,16 +81,6 @@ var defaults = {
         ratio: 1,
 
         /**
-         * 裁剪宽度
-         */
-        width: 200,
-
-        /**
-         * 裁剪高度
-         */
-        height: 200,
-
-        /**
          * 裁剪最小宽度
          */
         minWidth: 100,
@@ -136,7 +126,7 @@ var defaults = {
      * 绘制的图片质量
      * @type Number
      */
-    drawQuality: 0,
+    drawQuality: 0.8,
 
     /**
      * 绘制的图片类型
@@ -146,7 +136,7 @@ var defaults = {
     onUpload: function (fileInputEl, done) {
         done(new Error('未配置上传'));
     },
-    onBlobUpload: function (blob, done) {
+    onBlobUpload: function (fileInputEl, blob, done) {
         done(new Error('未配置上传'));
     }
 };
@@ -178,6 +168,7 @@ var _containerEl = ImgPreviewClipUpload.sole();
 var _footerEl = ImgPreviewClipUpload.sole();
 var _resetButtonEl = ImgPreviewClipUpload.sole();
 var _sureButtonEl = ImgPreviewClipUpload.sole();
+var _fileInputEl = ImgPreviewClipUpload.sole();
 var _imgEl = ImgPreviewClipUpload.sole();
 var _imgPreview = ImgPreviewClipUpload.sole();
 var _imgClip = ImgPreviewClipUpload.sole();
@@ -218,6 +209,8 @@ pro[_initEvent] = function () {
     var clipOptions = options.clip;
 
     the.on('beforeUpload', function (fileInputEl) {
+        the[_fileInputEl] = fileInputEl;
+
         // 切换为操作模式
         the[_changeMode](true);
 
@@ -237,8 +230,6 @@ pro[_initEvent] = function () {
                     el: the[_imgEl] = the[_imgPreview].getImgEl(),
                     auto: clipOptions.auto,
                     ratio: clipOptions.ratio,
-                    width: clipOptions.width,
-                    height: clipOptions.height,
                     minWidth: clipOptions.minWidth,
                     minHeight: clipOptions.minHeight,
                     maxWidth: clipOptions.maxWidth,
@@ -259,7 +250,7 @@ pro[_initEvent] = function () {
                 });
 
                 the[_imgClip].on('changeSelection', function () {
-
+                    // the[_changeButtonMode](true);
                 });
             }
         });
@@ -319,7 +310,7 @@ pro[_initEvent] = function () {
             quality: options.drawQuality
         }, function (blob) {
             the.emit('beforeBlobUpload');
-            options.onBlobUpload(blob, function (err, url) {
+            options.onBlobUpload(the[_fileInputEl], blob, function (err, url) {
                 the.emit('afterBlobUpload');
 
                 if (err) {
