@@ -107,7 +107,7 @@ var defaults = {
     },
     tips: '点击选择文件并上传',
     name: 'file',
-    accept: 'image/*',
+    accept: 'image/png,image/jpg,image/jpeg,image/bpm',
     multiple: false,
 
     /**
@@ -157,6 +157,42 @@ var ImgPreviewClipUpload = Upload.extend({
         the[_initNode]();
         the[_initEvent]();
         the[_changeMode](false);
+    },
+
+
+    /**
+     * 重置
+     * @returns {ImgPreviewClipUpload}
+     */
+    reset: function () {
+        var the = this;
+
+        the[_changeMode](false);
+        the.resize();
+
+        return the;
+    },
+
+
+    /**
+     * 销毁实例
+     */
+    destroy: function () {
+        var the = this;
+
+        event.un(the[_resetButtonEl], 'click');
+        event.un(the[_sureButtonEl], 'click');
+
+        modification.remove(the[_operatorEl]);
+        the[_imgPreview].destroy();
+        the[_imgPreview] = null;
+
+        if (the[_imgClip]) {
+            the[_imgClip].destroy();
+            the[_imgClip] = null;
+        }
+
+        ImgPreviewClipUpload.superInvoke('destroy', the);
     }
 });
 var _options = ImgPreviewClipUpload.sole();
@@ -168,7 +204,7 @@ var _containerEl = ImgPreviewClipUpload.sole();
 var _footerEl = ImgPreviewClipUpload.sole();
 var _resetButtonEl = ImgPreviewClipUpload.sole();
 var _sureButtonEl = ImgPreviewClipUpload.sole();
-var _fileInputEl = ImgPreviewClipUpload.sole();
+var _inputFileEl = ImgPreviewClipUpload.sole();
 var _imgEl = ImgPreviewClipUpload.sole();
 var _imgPreview = ImgPreviewClipUpload.sole();
 var _imgClip = ImgPreviewClipUpload.sole();
@@ -208,14 +244,14 @@ pro[_initEvent] = function () {
     var options = the[_options];
     var clipOptions = options.clip;
 
-    the.on('beforeUpload', function (fileInputEl) {
-        the[_fileInputEl] = fileInputEl;
+    the.on('beforeUpload', function (inputFileEl) {
+        the[_inputFileEl] = inputFileEl;
 
         // 切换为操作模式
         the[_changeMode](true);
 
         // 上传之前预览
-        the[_imgPreview].preview(fileInputEl, function (err, img) {
+        the[_imgPreview].preview(inputFileEl, function (err, img) {
             if (err) {
                 return the.emit('error', err);
             }
@@ -284,8 +320,7 @@ pro[_initEvent] = function () {
     });
 
     event.on(the[_resetButtonEl], 'click', function () {
-        the[_changeMode](false);
-        the.resize();
+        the.reset();
     });
 
     event.on(the[_sureButtonEl], 'click', function () {
@@ -310,7 +345,7 @@ pro[_initEvent] = function () {
             quality: options.drawQuality
         }, function (blob) {
             the.emit('beforeBlobUpload');
-            options.onBlobUpload(the[_fileInputEl], blob, function (err, url) {
+            options.onBlobUpload(the[_inputFileEl], blob, function (err, url) {
                 the.emit('afterBlobUpload');
 
                 if (err) {

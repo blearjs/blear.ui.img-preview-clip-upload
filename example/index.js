@@ -16,4 +16,17 @@ uploadEl.onclick = function () {
     ipcu.open();
 };
 
-
+// var uploadBoxEl = document.getElementById('uploadBox');
+// var inputFile = document.createElement('input');
+// inputFile.setAttribute('type', 'file');
+// inputFile.setAttribute('accept', 'image/*');
+// uploadBoxEl.appendChild(inputFile);
+//
+// inputFile = document.createElement('input');
+// inputFile.setAttribute('type', 'file');
+// inputFile.setAttribute('accept', 'image/png,image/jpg,image/jpeg');
+// uploadBoxEl.appendChild(inputFile);
+//
+// inputFile = document.createElement('input');
+// inputFile.setAttribute('type', 'file');
+// uploadBoxEl.appendChild(inputFile);
