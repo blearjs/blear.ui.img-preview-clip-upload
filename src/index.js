@@ -262,6 +262,7 @@ pro[_initEvent] = function () {
         // 上传之前预览
         the[_imgPreview].preview(inputFileEl, function (err, img) {
             if (err) {
+                the.reset();
                 return the.emit('error', err);
             }
 
