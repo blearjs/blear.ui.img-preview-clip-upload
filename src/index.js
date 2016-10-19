@@ -243,7 +243,12 @@ pro[_initNode] = function () {
         minHeight: previewOptions.minHeight,
         maxWidth: previewOptions.maxWidth,
         maxHeight: previewOptions.maxHeight,
-        onUpload: options.onUpload
+        onUpload: function (fileInputEl, done) {
+            options.onUpload.call(this, fileInputEl, function(err, url){
+                ImgPreviewClipUpload.superInvoke('reset', the);
+                done(err, url);
+            });
+        }
     });
 };
 
@@ -357,6 +362,7 @@ pro[_initEvent] = function () {
             the.emit('beforeBlobUpload');
             options.onBlobUpload(the[_inputFileEl], blob, function (err, url) {
                 the.emit('afterBlobUpload');
+                ImgPreviewClipUpload.superInvoke('reset', the);
 
                 if (err) {
                     return the.emit('error', err);
