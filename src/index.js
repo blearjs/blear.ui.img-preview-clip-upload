@@ -336,6 +336,7 @@ pro[_initEvent] = function () {
 
     event.on(the[_resetButtonEl], 'click', function () {
         the.reset();
+        ImgPreviewClipUpload.superInvoke('reset', the);
     });
 
     event.on(the[_sureButtonEl], 'click', function () {
