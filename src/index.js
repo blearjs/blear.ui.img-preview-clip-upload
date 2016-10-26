@@ -26,6 +26,7 @@ var tempCanvasEl = modification.create('canvas', {
         display: 'none'
     }
 });
+var supportClientClip = canvasContent.supportToBlob;
 var namespace = 'blearui-imgPreviewClipUpload';
 var defaults = {
     dialog: {
@@ -147,6 +148,9 @@ var defaults = {
     },
     onBlobUpload: function (fileInputEl, blob, done) {
         done(new Error('未配置上传'));
+    },
+    onFallback: function (imgEl, clipOptions, done) {
+        done(new Error('未配置客户端裁剪降级方案'));
     }
 };
 var ImgPreviewClipUpload = Upload.extend({
@@ -244,7 +248,7 @@ pro[_initNode] = function () {
         maxWidth: previewOptions.maxWidth,
         maxHeight: previewOptions.maxHeight,
         onUpload: function (fileInputEl, done) {
-            options.onUpload.call(this, fileInputEl, function(err, url){
+            options.onUpload.call(this, fileInputEl, function (err, url) {
                 ImgPreviewClipUpload.superInvoke('reset', the);
                 done(err, url);
             });
@@ -346,7 +350,7 @@ pro[_initEvent] = function () {
         var drawHeight = options.drawHeight || sel.srcHeight;
         tempCanvasEl.width = drawWdith;
         tempCanvasEl.height = drawHeight;
-        canvasImg.draw(tempCanvasEl, the[_imgEl], {
+        var clipOptions = {
             srcLeft: sel.srcLeft,
             srcTop: sel.srcTop,
             srcWidth: sel.srcWidth,
@@ -355,7 +359,29 @@ pro[_initEvent] = function () {
             drawTop: 0,
             drawWidth: drawWdith,
             drawHeight: drawHeight
-        });
+        };
+
+        // 裁剪之后
+        var onAfterClip = function (err, url) {
+            ImgPreviewClipUpload.superInvoke('reset', the);
+
+            if (err) {
+                return the.emit('error', err);
+            }
+
+            the.emit('success', url);
+        };
+
+        if (!supportClientClip) {
+            the.emit('beforeFallback');
+            options.onFallback(the[_imgEl], clipOptions, function (err, url) {
+                the.emit('afterFallback');
+                onAfterClip(err, url);
+            });
+            return;
+        }
+
+        canvasImg.draw(tempCanvasEl, the[_imgEl], clipOptions);
         canvasContent.toBlob(tempCanvasEl, {
             type: options.drawType,
             quality: options.drawQuality
@@ -363,13 +389,7 @@ pro[_initEvent] = function () {
             the.emit('beforeBlobUpload');
             options.onBlobUpload(the[_inputFileEl], blob, function (err, url) {
                 the.emit('afterBlobUpload');
-                ImgPreviewClipUpload.superInvoke('reset', the);
-
-                if (err) {
-                    return the.emit('error', err);
-                }
-
-                the.emit('success', url);
+                onAfterClip(err, url);
             });
         });
     });
@@ -400,5 +420,6 @@ pro[_changeButtonMode] = function (canUpload) {
     }
 };
 
+ImgPreviewClipUpload.supportClientClip = supportClientClip;
 ImgPreviewClipUpload.defaults = defaults;
 module.exports = ImgPreviewClipUpload;
