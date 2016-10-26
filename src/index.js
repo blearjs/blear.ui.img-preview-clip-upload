@@ -174,7 +174,7 @@ var ImgPreviewClipUpload = Upload.extend({
 
 
     /**
-     * 重置
+     * 重置，切换为上传
      * @returns {ImgPreviewClipUpload}
      */
     reset: function () {
@@ -338,6 +338,11 @@ pro[_initEvent] = function () {
         the.emit('afterPreviewLoading');
     });
 
+    // 不支持本地裁剪，则不需要本地预览
+    the[_imgPreview].on('localPreview', function () {
+        return supportClientClip;
+    });
+
     event.on(the[_resetButtonEl], 'click', function () {
         the.reset();
         ImgPreviewClipUpload.superInvoke('reset', the);
@@ -405,6 +410,12 @@ pro[_changeMode] = function (isOperating) {
     } else {
         attribute.show(the[_uploadEl]);
         attribute.hide(the[_operatorEl]);
+
+        if (the[_imgClip]) {
+            the[_imgClip].reset();
+        }
+
+        the[_imgPreview].reset();
     }
 };
 
