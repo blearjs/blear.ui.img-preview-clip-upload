@@ -327,7 +327,7 @@ pro[_initEvent] = function () {
     });
 
     the[_imgPreview].on('afterUpload', function () {
-        the.emit('beforePreviewUpload');
+        the.emit('afterPreviewUpload');
     });
 
     the[_imgPreview].on('beforeLoading', function () {

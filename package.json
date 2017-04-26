@@ -1,6 +1,6 @@
 {
   "name": "blear.ui.img-preview-clip-upload",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "图片预览裁剪上传 UI",
   "scripts": {
     "live": "browser-sync start --config bs-config.js"
@@ -8,7 +8,7 @@
   "preferGlobal": false,
   "bin": {},
   "engines": {
-    "node": ">=1.0.0",
+    "node": ">=6.0.0",
     "iojs": ">=1.0.0"
   },
   "main": "src/index.js",
