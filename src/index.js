@@ -17,6 +17,7 @@ var event = require('blear.core.event');
 var selector = require('blear.core.selector');
 var attribute = require('blear.core.attribute');
 var modification = require('blear.core.modification');
+var layout = require('blear.core.layout');
 
 var template = require('./template.html');
 require('./style.css', 'css|style');
@@ -28,6 +29,8 @@ var tempCanvasEl = modification.create('canvas', {
 });
 var supportClientClip = canvasContent.supportToBlob;
 var namespace = 'blearui-imgPreviewClipUpload';
+var windowHeight = layout.height(window);
+var extraHeight = 120;
 var defaults = {
     dialog: {
         title: '裁剪图片并上传',
@@ -65,7 +68,7 @@ var defaults = {
         maxWidth: 1000,
 
         /**
-         * 预览的最大高度
+         * 预览的最大高度，会自动计算取最小值
          * @type String|Number
          */
         maxHeight: 800
@@ -205,7 +208,6 @@ var sole = ImgPreviewClipUpload.sole;
 var _options = sole();
 var _initNode = sole();
 var _initEvent = sole();
-var _uploadEl = sole();
 var _operatorEl = sole();
 var _containerEl = sole();
 var _footerEl = sole();
@@ -216,7 +218,6 @@ var _inputFileEl = sole();
 var _imgEl = sole();
 var _imgPreview = sole();
 var _imgClip = sole();
-var _changeMode = sole();
 var _changeButtonMode = sole();
 var _createInputFileEl = sole();
 var proto = ImgPreviewClipUpload.prototype;
@@ -236,11 +237,7 @@ proto[_initNode] = function () {
     the[_sureButtonEl] = buttons[1];
     the[_rotateButtonEl] = buttons[2];
     previewOptions.el = the[_containerEl];
-    previewOptions.onUpload = function (fileInputEl, done) {
-        options.onUpload.call(this, fileInputEl, function (err, url) {
-            done(err, url);
-        });
-    };
+    previewOptions.maxHeight = Math.min(previewOptions.maxHeight, windowHeight - extraHeight);
     the[_imgPreview] = new ImgPreview(previewOptions);
 };
 
@@ -358,26 +355,6 @@ proto[_initEvent] = function () {
         });
     });
 };
-
-// 切换模式
-proto[_changeMode] = function (isOperating) {
-    var the = this;
-
-    if (isOperating) {
-        // attribute.hide(the[_uploadEl]);
-        // attribute.show(the[_operatorEl]);
-    } else {
-        // attribute.show(the[_uploadEl]);
-        // attribute.hide(the[_operatorEl]);
-
-        if (the[_imgClip]) {
-            the[_imgClip].reset();
-        }
-
-        the[_imgPreview].reset();
-    }
-};
-
 
 // 切换按钮模式
 proto[_changeButtonMode] = function (canUpload) {
