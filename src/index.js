@@ -30,7 +30,7 @@ var tempCanvasEl = modification.create('canvas', {
 var supportClientClip = canvasContent.supportToBlob;
 var namespace = 'blearui-imgPreviewClipUpload';
 var windowHeight = layout.height(window);
-var extraHeight = 120;
+var extraHeight = 150;
 var defaults = {
     dialog: {
         title: '裁剪图片并上传',
@@ -256,43 +256,34 @@ proto[_initEvent] = function () {
                 return the.emit('error', err);
             }
 
-            the.open();
             modification.insert(img, the[_containerEl]);
-            the.resize();
+            the.open(function () {
+                // 预览之后裁剪
+                if (the[_imgClip]) {
+                    the[_imgClip].changeImage(img.src);
+                } else {
+                    clipOptions.el = the[_imgEl] = the[_imgPreview].getImageEl();
+                    the[_imgClip] = new ImgClip(clipOptions);
 
-            // 预览之后裁剪
-            if (the[_imgClip]) {
-                the[_imgClip].changeImage(img.src);
-            } else {
-                clipOptions.el = the[_imgEl] = the[_imgPreview].getImgEl();
-                the[_imgClip] = new ImgClip(clipOptions);
+                    the[_imgClip].on('beforeSelection', function () {
+                        the[_changeButtonMode](false);
+                    });
 
-                the[_imgClip].on('beforeSelection', function () {
-                    the[_changeButtonMode](false);
-                });
+                    the[_imgClip].on('cancelSelection', function () {
+                        the[_changeButtonMode](false);
+                    });
 
-                the[_imgClip].on('cancelSelection', function () {
-                    the[_changeButtonMode](false);
-                });
+                    the[_imgClip].on('afterSelection', function () {
+                        the[_changeButtonMode](true);
+                    });
 
-                the[_imgClip].on('afterSelection', function () {
-                    the[_changeButtonMode](true);
-                });
-
-                the[_imgClip].on('changeSelection', function () {
-                    // the[_changeButtonMode](true);
-                });
-            }
+                    the[_imgClip].on('changeSelection', function () {
+                        // the[_changeButtonMode](true);
+                    });
+                }
+            });
         });
     });
-
-    // the.on('afterUpload', function () {
-    //
-    // });
-    //
-    // the.on('success', function (url) {
-    //
-    // });
 
     the[_imgPreview].on('beforeUpload', function () {
         the.emit('beforePreviewUpload');
