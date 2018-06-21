@@ -1,6 +1,7 @@
 .blearui-imgPreviewClipUpload {
   position: relative; }
   .blearui-imgPreviewClipUpload-container {
+    margin-top: 10px;
     text-align: center; }
   .blearui-imgPreviewClipUpload-footer {
     padding: 10px;

@@ -7,7 +7,7 @@
 'use strict';
 
 
-var Upload = require('blear.ui.upload');
+var Dialog = require('blear.ui.dialog');
 var ImgPreview = require('blear.ui.img-preview');
 var ImgClip = require('blear.ui.img-clip');
 var object = require('blear.utils.object');
@@ -143,49 +143,42 @@ var defaults = {
      * @type String
      */
     drawType: 'image/jpeg',
-    onUpload: function (fileInputEl, done) {
-        done(new Error('未配置上传'));
-    },
-    onBlobUpload: function (fileInputEl, blob, done) {
-        done(new Error('未配置上传'));
-    },
-    onFallback: function (imgEl, clipOptions, done) {
-        done(new Error('未配置客户端裁剪降级方案'));
+    onUpload: function (fileInputEl, blob, done) {
+        done(new Error('未配置 BLOB 上传'));
     }
 };
-var ImgPreviewClipUpload = Upload.extend({
+var ImgPreviewClipUpload = Dialog.extend({
     className: 'ImgPreviewClipUpload',
     constructor: function (options) {
         var the = this;
 
-        the[_options] = object.assign(true, {}, defaults, options);
-        ImgPreviewClipUpload.parent(the, {
-            dialog: the[_options].dialog,
-            tips: the[_options].tips,
-            name: the[_options].name,
-            accept: the[_options].accept,
-            multiple: the[_options].multiple,
-            onUpload: the[_options].onUpload
-        });
+        options = the[_options] = object.assign(true, {}, defaults, options);
+        ImgPreviewClipUpload.parent(the, options.dialog);
         the[_initNode]();
         the[_initEvent]();
-        the[_changeMode](false);
     },
-
 
     /**
-     * 重置，切换为上传
+     * 开始
      * @returns {ImgPreviewClipUpload}
      */
-    reset: function () {
+    start: function () {
         var the = this;
+        var options = the[_options];
+        var inputFileEl = the[_createInputFileEl]();
 
-        the[_changeMode](false);
-        the.resize();
+        inputFileEl.onchange = function () {
+            var value = inputFileEl.value;
 
+            if (!value) {
+                return;
+            }
+
+            the.emit('beforeUpload', inputFileEl);
+        };
+        event.emit(inputFileEl, event.create('click', MouseEvent));
         return the;
     },
-
 
     /**
      * 销毁实例
@@ -205,59 +198,54 @@ var ImgPreviewClipUpload = Upload.extend({
             the[_imgClip] = null;
         }
 
-        ImgPreviewClipUpload.superInvoke('destroy', the);
+        ImgPreviewClipUpload.invoke('destroy', the);
     }
 });
-var _options = ImgPreviewClipUpload.sole();
-var _initNode = ImgPreviewClipUpload.sole();
-var _initEvent = ImgPreviewClipUpload.sole();
-var _uploadEl = ImgPreviewClipUpload.sole();
-var _operatorEl = ImgPreviewClipUpload.sole();
-var _containerEl = ImgPreviewClipUpload.sole();
-var _footerEl = ImgPreviewClipUpload.sole();
-var _resetButtonEl = ImgPreviewClipUpload.sole();
-var _sureButtonEl = ImgPreviewClipUpload.sole();
-var _inputFileEl = ImgPreviewClipUpload.sole();
-var _imgEl = ImgPreviewClipUpload.sole();
-var _imgPreview = ImgPreviewClipUpload.sole();
-var _imgClip = ImgPreviewClipUpload.sole();
-var _changeMode = ImgPreviewClipUpload.sole();
-var _changeButtonMode = ImgPreviewClipUpload.sole();
-var pro = ImgPreviewClipUpload.prototype;
+var sole = ImgPreviewClipUpload.sole;
+var _options = sole();
+var _initNode = sole();
+var _initEvent = sole();
+var _uploadEl = sole();
+var _operatorEl = sole();
+var _containerEl = sole();
+var _footerEl = sole();
+var _resetButtonEl = sole();
+var _sureButtonEl = sole();
+var _rotateButtonEl = sole();
+var _inputFileEl = sole();
+var _imgEl = sole();
+var _imgPreview = sole();
+var _imgClip = sole();
+var _changeMode = sole();
+var _changeButtonMode = sole();
+var _createInputFileEl = sole();
+var proto = ImgPreviewClipUpload.prototype;
 
 // 初始化节点
-pro[_initNode] = function () {
+proto[_initNode] = function () {
     var the = this;
     var options = the[_options];
     var previewOptions = options.preview;
     var node = the[_operatorEl] = modification.parse(template);
     var buttons = selector.query('.' + namespace + '-button', node);
 
-    the[_uploadEl] = the.getContentEl();
+    ImgPreviewClipUpload.invoke('setHTML', the, node);
     the[_containerEl] = selector.query('.' + namespace + '-container', node)[0];
     the[_footerEl] = selector.query('.' + namespace + '-footer', node)[0];
     the[_resetButtonEl] = buttons[0];
     the[_sureButtonEl] = buttons[1];
-    modification.insert(node, the[_uploadEl], 'afterend');
-    the[_imgPreview] = new ImgPreview({
-        el: the[_containerEl],
-        width: previewOptions.width,
-        height: previewOptions.height,
-        minWidth: previewOptions.minWidth,
-        minHeight: previewOptions.minHeight,
-        maxWidth: previewOptions.maxWidth,
-        maxHeight: previewOptions.maxHeight,
-        onUpload: function (fileInputEl, done) {
-            options.onUpload.call(this, fileInputEl, function (err, url) {
-                ImgPreviewClipUpload.superInvoke('reset', the);
-                done(err, url);
-            });
-        }
-    });
+    the[_rotateButtonEl] = buttons[2];
+    previewOptions.el = the[_containerEl];
+    previewOptions.onUpload = function (fileInputEl, done) {
+        options.onUpload.call(this, fileInputEl, function (err, url) {
+            done(err, url);
+        });
+    };
+    the[_imgPreview] = new ImgPreview(previewOptions);
 };
 
 // 初始化事件
-pro[_initEvent] = function () {
+proto[_initEvent] = function () {
     var the = this;
     var options = the[_options];
     var clipOptions = options.clip;
@@ -265,32 +253,22 @@ pro[_initEvent] = function () {
     the.on('beforeUpload', function (inputFileEl) {
         the[_inputFileEl] = inputFileEl;
 
-        // 切换为操作模式
-        the[_changeMode](true);
-
         // 上传之前预览
         the[_imgPreview].preview(inputFileEl, function (err, img) {
             if (err) {
-                the.reset();
                 return the.emit('error', err);
             }
 
+            the.open();
+            modification.insert(img, the[_containerEl]);
             the.resize();
 
             // 预览之后裁剪
             if (the[_imgClip]) {
                 the[_imgClip].changeImage(img.src);
             } else {
-                the[_imgClip] = new ImgClip({
-                    el: the[_imgEl] = the[_imgPreview].getImgEl(),
-                    auto: clipOptions.auto,
-                    ratio: clipOptions.ratio,
-                    minWidth: clipOptions.minWidth,
-                    minHeight: clipOptions.minHeight,
-                    maxWidth: clipOptions.maxWidth,
-                    maxHeight: clipOptions.maxHeight,
-                    minSelectionSize: clipOptions.minSelectionSize
-                });
+                clipOptions.el = the[_imgEl] = the[_imgPreview].getImgEl();
+                the[_imgClip] = new ImgClip(clipOptions);
 
                 the[_imgClip].on('beforeSelection', function () {
                     the[_changeButtonMode](false);
@@ -309,9 +287,6 @@ pro[_initEvent] = function () {
                 });
             }
         });
-
-        // 不被动上传
-        return false;
     });
 
     // the.on('afterUpload', function () {
@@ -338,18 +313,16 @@ pro[_initEvent] = function () {
         the.emit('afterPreviewLoading');
     });
 
-    // 不支持本地裁剪，则不需要本地预览
-    the[_imgPreview].on('localPreview', function () {
-        return supportClientClip;
-    });
+    // // 不支持本地裁剪，则不需要本地预览
+    // the[_imgPreview].on('localPreview', function () {
+    //     return supportClientClip;
+    // });
 
     event.on(the[_resetButtonEl], 'click', function () {
-        the.reset();
-        ImgPreviewClipUpload.superInvoke('reset', the);
+        // the.reset();
     });
 
     event.on(the[_sureButtonEl], 'click', function () {
-        the[_changeButtonMode](false);
         var sel = the[_imgClip].getSelection();
         var drawWdith = options.drawWdith || sel.srcWidth;
         var drawHeight = options.drawHeight || sel.srcHeight;
@@ -366,50 +339,36 @@ pro[_initEvent] = function () {
             drawHeight: drawHeight
         };
 
-        // 裁剪之后
-        var onAfterClip = function (err, url) {
-            ImgPreviewClipUpload.superInvoke('reset', the);
-
-            if (err) {
-                return the.emit('error', err);
-            }
-
-            the.emit('success', url);
-        };
-
-        if (!supportClientClip) {
-            the.emit('beforeFallback');
-            options.onFallback(the[_imgEl], clipOptions, function (err, url) {
-                the.emit('afterFallback');
-                onAfterClip(err, url);
-            });
-            return;
-        }
-
         canvasImg.draw(tempCanvasEl, the[_imgEl], clipOptions);
         canvasContent.toBlob(tempCanvasEl, {
             type: options.drawType,
             quality: options.drawQuality
         }, function (blob) {
             the.emit('beforeBlobUpload');
-            options.onBlobUpload(the[_inputFileEl], blob, function (err, url) {
+            options.onUpload.call(the, the[_inputFileEl], blob, function (err, url) {
                 the.emit('afterBlobUpload');
-                onAfterClip(err, url);
+
+                if (err) {
+                    return the.emit('error', err);
+                }
+
+                the.emit('success', url);
+                the.close();
             });
         });
     });
 };
 
 // 切换模式
-pro[_changeMode] = function (isOperating) {
+proto[_changeMode] = function (isOperating) {
     var the = this;
 
     if (isOperating) {
-        attribute.hide(the[_uploadEl]);
-        attribute.show(the[_operatorEl]);
+        // attribute.hide(the[_uploadEl]);
+        // attribute.show(the[_operatorEl]);
     } else {
-        attribute.show(the[_uploadEl]);
-        attribute.hide(the[_operatorEl]);
+        // attribute.show(the[_uploadEl]);
+        // attribute.hide(the[_operatorEl]);
 
         if (the[_imgClip]) {
             the[_imgClip].reset();
@@ -421,7 +380,7 @@ pro[_changeMode] = function (isOperating) {
 
 
 // 切换按钮模式
-pro[_changeButtonMode] = function (canUpload) {
+proto[_changeButtonMode] = function (canUpload) {
     var the = this;
 
     if (canUpload) {
@@ -429,6 +388,24 @@ pro[_changeButtonMode] = function (canUpload) {
     } else {
         attribute.hide(the[_sureButtonEl]);
     }
+};
+
+proto[_createInputFileEl] = function () {
+    var the = this;
+    var options = the[_options];
+    var properties = {
+        name: options.name,
+        accept: options.accept,
+        multiple: options.multiple,
+        type: 'file',
+        tabIndex: -1,
+        style: {
+            display: 'none'
+        }
+    };
+    var inputFileEl = modification.create('input', properties);
+    modification.insert(inputFileEl);
+    return inputFileEl;
 };
 
 ImgPreviewClipUpload.supportClientClip = supportClientClip;

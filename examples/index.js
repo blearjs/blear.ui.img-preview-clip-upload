@@ -8,13 +8,39 @@
 'use strict';
 
 var ImgPreviewClipUpload = require('../src/index');
+var upload = require('blear.core.upload');
 
 var uploadEl = document.getElementById('upload');
-var ipcu = window.ipcu = new ImgPreviewClipUpload();
+var viewEl = document.getElementById('view');
+var ipcu = window.ipcu = new ImgPreviewClipUpload({
+    onUpload: function (el, blob, callback) {
+        upload({
+            url: 'http://localhost:5678',
+            fileEl: el,
+            blob: blob,
+            onComplete: function (err, xhr) {
+                if (err) {
+                    return callback(err);
+                }
+
+                var json = JSON.parse(xhr.responseText);
+                callback(null, json.url);
+            }
+        });
+    }
+});
 
 uploadEl.onclick = function () {
-    ipcu.open();
+    ipcu.start();
 };
+
+ipcu.on('error', function (err) {
+    alert(err.message);
+});
+
+ipcu.on('success', function (url) {
+    viewEl.innerHTML = '<img src="' + url + '">';
+});
 
 // var uploadBoxEl = document.getElementById('uploadBox');
 // var inputFile = document.createElement('input');
