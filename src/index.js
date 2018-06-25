@@ -119,7 +119,6 @@ var defaults = {
          */
         expectHeight: 0
     },
-    tips: '点击选择文件并上传',
     name: 'file',
     // 必须是清晰的约束条件
     // @link http://frontenddev.org/article/under-the-chrome-input-file-accept-constraints-lead-to-pop-up-response-is-slow.html
