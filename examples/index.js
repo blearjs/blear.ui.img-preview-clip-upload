@@ -13,8 +13,6 @@ var upload = require('blear.core.upload');
 var uploadEl = document.getElementById('upload');
 var viewEl = document.getElementById('view');
 var ipcu = window.ipcu = new ImgPreviewClipUpload({
-    drawWdith: 500,
-    drawHeight: 500,
     onUpload: function (el, blob, callback) {
         upload({
             url: 'http://localhost:5678',

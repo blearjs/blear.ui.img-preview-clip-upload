@@ -34,7 +34,7 @@ var extraHeight = 150;
 var defaults = {
     dialog: {
         title: '裁剪图片并上传',
-        width: 1000
+        width: 800
     },
     preview: {
         /**
@@ -65,7 +65,7 @@ var defaults = {
          * 预览的最大宽度
          * @type String|Number
          */
-        maxWidth: 1000,
+        maxWidth: 800,
 
         /**
          * 预览的最大高度，会自动计算取最小值
@@ -107,7 +107,17 @@ var defaults = {
         /**
          * 开始选区的最小值
          */
-        minSelectionSize: 10
+        minSelectionSize: 10,
+
+        /**
+         * 期望宽度
+         */
+        expectWidth: 800,
+
+        /**
+         * 期望高度
+         */
+        expectHeight: 0
     },
     tips: '点击选择文件并上传',
     name: 'file',
@@ -120,20 +130,6 @@ var defaults = {
      * @type String
      */
     extension: '.png,.jpg,.jpeg,.bmp',
-
-    multiple: false,
-
-    /**
-     * 绘制的宽度
-     * @type Number
-     */
-    drawWdith: 100,
-
-    /**
-     * 绘制的高度
-     * @type Number
-     */
-    drawHeight: 100,
 
     /**
      * 绘制的图片质量
@@ -251,18 +247,21 @@ proto[_initEvent] = function () {
         the[_inputFileEl] = inputFileEl;
 
         // 上传之前预览
-        the[_imgPreview].preview(inputFileEl, function (err, img) {
+        the[_imgPreview].preview(inputFileEl, function (err, imgEl) {
             if (err) {
                 return the.emit('error', err);
             }
 
-            modification.insert(img, the[_containerEl]);
+            if (!the[_imgClip]) {
+                modification.insert(imgEl, the[_containerEl]);
+            }
+
+            the[_imgEl] = imgEl;
             the.open(function () {
-                // 预览之后裁剪
                 if (the[_imgClip]) {
-                    the[_imgClip].changeImage(img.src);
+                    the[_imgClip].changeImage(imgEl.src);
                 } else {
-                    clipOptions.el = the[_imgEl] = the[_imgPreview].getImageEl();
+                    clipOptions.el = imgEl;
                     the[_imgClip] = new ImgClip(clipOptions);
 
                     the[_imgClip].on('beforeSelection', function () {
@@ -301,33 +300,29 @@ proto[_initEvent] = function () {
         the.emit('afterPreviewLoading');
     });
 
-    // // 不支持本地裁剪，则不需要本地预览
-    // the[_imgPreview].on('localPreview', function () {
-    //     return supportClientClip;
-    // });
+    the.on('afterClose', function () {
+        if (the[_imgClip]) {
+            the[_imgClip].reset();
+        }
+    });
 
     event.on(the[_resetButtonEl], 'click', function () {
-        // the.reset();
+        the.close();
+        the.start();
     });
 
     event.on(the[_sureButtonEl], 'click', function () {
         var sel = the[_imgClip].getSelection();
-        var drawWdith = options.drawWdith || sel.srcWidth;
-        var drawHeight = options.drawHeight || sel.srcHeight;
-        tempCanvasEl.width = drawWdith;
-        tempCanvasEl.height = drawHeight;
-        var clipOptions = {
-            srcLeft: sel.srcLeft,
-            srcTop: sel.srcTop,
-            srcWidth: sel.srcWidth,
-            srcHeight: sel.srcHeight,
-            drawLeft: 0,
-            drawTop: 0,
-            drawWidth: drawWdith,
-            drawHeight: drawHeight
-        };
+        var clipOptions = sel;
+        var context = tempCanvasEl.getContext('2d');
 
-        canvasImg.draw(tempCanvasEl, the[_imgEl], clipOptions);
+        tempCanvasEl.width = sel.actualWidth;
+        tempCanvasEl.height = sel.actualHeight;
+        context.save();
+        context.translate(sel.drawX, sel.drawY);
+        context.rotate(sel.drawRadian);
+        canvasImg.draw(tempCanvasEl, the[_imgPreview].getImageEl(), clipOptions);
+        context.restore();
         canvasContent.toBlob(tempCanvasEl, {
             type: options.drawType,
             quality: options.drawQuality
@@ -344,6 +339,15 @@ proto[_initEvent] = function () {
                 the.close();
             });
         });
+    });
+
+    event.on(the[_rotateButtonEl], 'click', function () {
+        the[_imgPreview].rotate(90);
+        the[_imgClip].changeImage(
+            the[_imgPreview].getImageEl().src,
+            the[_imgPreview].getRotation()
+        );
+        the.resize();
     });
 };
 
@@ -364,7 +368,7 @@ proto[_createInputFileEl] = function () {
     var properties = {
         name: options.name,
         accept: options.accept,
-        multiple: options.multiple,
+        multiple: false,
         type: 'file',
         tabIndex: -1,
         style: {
